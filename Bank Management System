@@ -1,0 +1,322 @@
+import random
+from tkinter import *
+from tkinter import messagebox
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+
+
+class BankAccount:
+    def __init__(self, name, pin, balance):
+        self.name = name
+        self.pin = pin
+        self.balance = balance
+        self.Transaction_History = []
+
+    def deposit(self, amount):
+        if amount > 0:
+            self.balance += amount
+            self.Transaction_History.append(f"Deposit +{amount}")
+            return f"Deposit Successful! New Balance: {self.balance}"
+        return "Invalid amount."
+
+    def withdraw(self, amount):
+        if amount > 0 and amount <= self.balance:
+            self.balance -= amount
+            self.Transaction_History.append(f"Withdraw -{amount}")
+            return f"Withdraw Successful! New Balance: {self.balance}"
+        return "Insufficient balance or Invalid amount."
+
+    def check_balance(self):
+        return f"Your balance is: {self.balance}"
+
+    def view_transaction_history(self):
+        if self.Transaction_History:
+            return "\n".join(self.Transaction_History)
+        return "No transaction yet."
+
+
+class BankAccountManagement:
+    def __init__(self):
+        self.accounts = {}
+        self.current_account = None
+        self.root = tb.Window(themename="morph")
+        self.root.title("ByteBank Account System")
+        self.root.geometry("900x700")
+        self.main_frame = tb.Frame(self.root, padding=(30, 20))
+        self.main_frame.pack(expand=True, fill=BOTH)
+
+        self.style = tb.Style()
+        self.style.configure('success.TButton', font=('Helvetica', 10, 'bold'))
+        self.style.configure('primary.TButton', font=('Helvetica', 10))
+
+        self.show_main_menu()
+
+    def generate_account_number(self):
+        while True:
+            account_number = random.randint(100000, 999999)
+            if account_number not in self.accounts:
+                return account_number
+
+    def show_main_menu(self):
+        self.clear_content()
+        tb.Label(self.main_frame, text="Welcome To ByteBank",
+                 font=("Helvetica", 24, "bold"), bootstyle="primary").pack(pady=(20, 40))
+
+        options = [
+            ("Create Account", self.show_create_account),
+            ("Login", self.show_login),
+            ("Retrieve Account Number", self.show_retrieve_account),
+            ("Exit", self.root.destroy)
+        ]
+
+        for text, command in options:
+            btn = tb.Button(self.main_frame, text=text, command=command,
+                            width=25, bootstyle="primary")
+            btn.pack(pady=10, ipady=5)
+            if text == "Exit":
+                btn.configure(bootstyle="danger")
+
+    def show_create_account(self):
+        self.clear_content()
+        form_frame = tb.Frame(self.main_frame)
+        form_frame.pack(expand=True, pady=20)
+
+        tb.Label(form_frame, text="Create New Account",
+                 font=("Helvetica", 16, "bold"), bootstyle="info").grid(row=0, column=0, columnspan=2, pady=20)
+
+        tb.Label(form_frame, text="Name:", font=("Helvetica", 10)).grid(row=1, column=0, padx=10, pady=10, sticky=E)
+        self.name_entry = tb.Entry(form_frame, font=("Helvetica", 10), width=25)
+        self.name_entry.grid(row=1, column=1, padx=10, pady=10, sticky=W)
+
+        tb.Label(form_frame, text="PIN (4 digits):", font=("Helvetica", 10)).grid(row=2, column=0, padx=10, pady=10,
+                                                                                  sticky=E)
+        self.pin_entry = tb.Entry(form_frame, show="*", font=("Helvetica", 10), width=25)
+        self.pin_entry.grid(row=2, column=1, padx=10, pady=10, sticky=W)
+
+        btn_frame = tb.Frame(form_frame)
+        btn_frame.grid(row=3, column=0, columnspan=2, pady=30)
+
+        tb.Button(btn_frame, text="Create Account", command=self.create_account_gui,
+                  bootstyle="success").pack(side=LEFT, padx=10, ipadx=10)
+        tb.Button(btn_frame, text="Back", command=self.show_main_menu,
+                  bootstyle="secondary").pack(side=LEFT, padx=10, ipadx=10)
+
+    def create_account_gui(self):
+        name = self.name_entry.get().strip()
+        pin = self.pin_entry.get().strip()
+
+        if not name:
+            messagebox.showerror("Error", "Name cannot be empty!")
+            return
+
+        if not (pin.isdigit() and len(pin) == 4):
+            messagebox.showerror("Error", "PIN must be 4 digits!")
+            return
+
+        account_number = self.generate_account_number()
+        self.accounts[account_number] = BankAccount(name, pin, balance=0)
+        messagebox.showinfo("Success",
+                            f"Account Created Successfully!\n\nYour Account Number is: {account_number}")
+        self.show_main_menu()
+
+    def show_login(self):
+        self.clear_content()
+        form_frame = tb.Frame(self.main_frame)
+        form_frame.pack(expand=True, pady=20)
+
+        tb.Label(form_frame, text="Login to Your Account",
+                 font=("Helvetica", 16, "bold"), bootstyle="info").grid(row=0, column=0, columnspan=2, pady=20)
+
+        tb.Label(form_frame, text="Account Number:", font=("Helvetica", 10)).grid(row=1, column=0, padx=10, pady=10,
+                                                                                  sticky=E)
+        self.login_acc_entry = tb.Entry(form_frame, font=("Helvetica", 10), width=25)
+        self.login_acc_entry.grid(row=1, column=1, padx=10, pady=10, sticky=W)
+
+        tb.Label(form_frame, text="PIN:", font=("Helvetica", 10)).grid(row=2, column=0, padx=10, pady=10, sticky=E)
+        self.login_pin_entry = tb.Entry(form_frame, show="*", font=("Helvetica", 10), width=25)
+        self.login_pin_entry.grid(row=2, column=1, padx=10, pady=10, sticky=W)
+
+        btn_frame = tb.Frame(form_frame)
+        btn_frame.grid(row=3, column=0, columnspan=2, pady=30)
+
+        tb.Button(btn_frame, text="Login", command=self.login_gui,
+                  bootstyle="success").pack(side=LEFT, padx=10, ipadx=10)
+        tb.Button(btn_frame, text="Back", command=self.show_main_menu,
+                  bootstyle="secondary").pack(side=LEFT, padx=10, ipadx=10)
+
+    def login_gui(self):
+        try:
+            account_number = int(self.login_acc_entry.get())
+        except ValueError:
+            messagebox.showerror("Error", "Invalid Account Number!")
+            return
+
+        pin = self.login_pin_entry.get()
+        account = self.accounts.get(account_number)
+
+        if account and account.pin == pin:
+            self.current_account = account
+            self.show_account_menu()
+        else:
+            messagebox.showerror("Error", "Login Failed! Invalid Account Number or PIN")
+
+    def show_account_menu(self):
+        self.clear_content()
+        tb.Label(self.main_frame, text=f"Welcome, {self.current_account.name}",
+                 font=("Helvetica", 18, "bold"), bootstyle="info").pack(pady=(20, 40))
+
+        options = [
+            ("Deposit", self.show_deposit),
+            ("Withdraw", self.show_withdraw),
+            ("Check Balance", self.show_balance),
+            ("Transaction History", self.show_transactions),
+            ("Logout", self.show_main_menu)
+        ]
+
+        for text, command in options:
+            btn = tb.Button(self.main_frame, text=text, command=command,
+                            width=20, bootstyle="primary")
+            btn.pack(pady=10, ipady=5)
+            if text == "Logout":
+                btn.configure(bootstyle="warning")
+
+    def show_deposit(self):
+        self.clear_content()
+        form_frame = tb.Frame(self.main_frame)
+        form_frame.pack(expand=True, pady=20)
+
+        tb.Label(form_frame, text="Deposit Amount",
+                 font=("Helvetica", 16, "bold"), bootstyle="info").grid(row=0, column=0, columnspan=2, pady=20)
+
+        tb.Label(form_frame, text="Amount:", font=("Helvetica", 10)).grid(row=1, column=0, padx=10, pady=10, sticky=E)
+        self.amount_entry = tb.Entry(form_frame, font=("Helvetica", 10))
+        self.amount_entry.grid(row=1, column=1, padx=10, pady=10, sticky=W)
+
+        btn_frame = tb.Frame(form_frame)
+        btn_frame.grid(row=2, column=0, columnspan=2, pady=30)
+
+        tb.Button(btn_frame, text="Deposit", command=self.deposit_gui,
+                  bootstyle="success").pack(side=LEFT, padx=10, ipadx=10)
+        tb.Button(btn_frame, text="Back", command=self.show_account_menu,
+                  bootstyle="secondary").pack(side=LEFT, padx=10, ipadx=10)
+
+    def deposit_gui(self):
+        try:
+            amount = float(self.amount_entry.get())
+            result = self.current_account.deposit(amount)
+            messagebox.showinfo("Success", result)
+            self.show_account_menu()
+        except ValueError:
+            messagebox.showerror("Error", "Invalid amount!")
+
+    def show_withdraw(self):
+        self.clear_content()
+        form_frame = tb.Frame(self.main_frame)
+        form_frame.pack(expand=True, pady=20)
+
+        tb.Label(form_frame, text="Withdraw Amount",
+                 font=("Helvetica", 16, "bold"), bootstyle="info").grid(row=0, column=0, columnspan=2, pady=20)
+
+        tb.Label(form_frame, text="Amount:", font=("Helvetica", 10)).grid(row=1, column=0, padx=10, pady=10, sticky=E)
+        self.withdraw_entry = tb.Entry(form_frame, font=("Helvetica", 10))
+        self.withdraw_entry.grid(row=1, column=1, padx=10, pady=10, sticky=W)
+
+        btn_frame = tb.Frame(form_frame)
+        btn_frame.grid(row=2, column=0, columnspan=2, pady=30)
+
+        tb.Button(btn_frame, text="Withdraw", command=self.withdraw_gui,
+                  bootstyle="success").pack(side=LEFT, padx=10, ipadx=10)
+        tb.Button(btn_frame, text="Back", command=self.show_account_menu,
+                  bootstyle="secondary").pack(side=LEFT, padx=10, ipadx=10)
+
+    def withdraw_gui(self):
+        try:
+            amount = float(self.withdraw_entry.get())
+            result = self.current_account.withdraw(amount)
+            messagebox.showinfo("Success" if "Successful" in result else "Error", result)
+            self.show_account_menu()
+        except ValueError:
+            messagebox.showerror("Error", "Invalid amount!")
+
+    def show_balance(self):
+        messagebox.showinfo("Balance", self.current_account.check_balance())
+
+    def show_transactions(self):
+        self.clear_content()
+        text_frame = tb.Frame(self.main_frame)
+        text_frame.pack(expand=True, fill=BOTH, padx=20, pady=20)
+
+        tb.Label(text_frame, text="Transaction History",
+                 font=("Helvetica", 16, "bold"), bootstyle="info").pack(pady=10)
+
+        text_widget = Text(text_frame, wrap=WORD, width=60, height=15,
+                           font=("Helvetica", 10), padx=10, pady=10)
+        scrollbar = tb.Scrollbar(text_frame, orient=VERTICAL, command=text_widget.yview, bootstyle="round")
+        text_widget.config(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side=RIGHT, fill=Y)
+        text_widget.pack(side=LEFT, expand=True, fill=BOTH)
+
+        transactions = self.current_account.view_transaction_history()
+        text_widget.insert(END, transactions)
+        text_widget.config(state=DISABLED)
+
+        tb.Button(text_frame, text="Back", command=self.show_account_menu,
+                  bootstyle="secondary").pack(pady=20, ipadx=10)
+
+    def show_retrieve_account(self):
+        self.clear_content()
+        form_frame = tb.Frame(self.main_frame)
+        form_frame.pack(expand=True, pady=20)
+
+        tb.Label(form_frame, text="Retrieve Account Number",
+                 font=("Helvetica", 16, "bold"), bootstyle="info").grid(row=0, column=0, columnspan=2, pady=20)
+
+        tb.Label(form_frame, text="Name:", font=("Helvetica", 10)).grid(row=1, column=0, padx=10, pady=10, sticky=E)
+        self.retrieve_name_entry = tb.Entry(form_frame, font=("Helvetica", 10), width=25)
+        self.retrieve_name_entry.grid(row=1, column=1, padx=10, pady=10, sticky=W)
+
+        tb.Label(form_frame, text="PIN:", font=("Helvetica", 10)).grid(row=2, column=0, padx=10, pady=10, sticky=E)
+        self.retrieve_pin_entry = tb.Entry(form_frame, show="*", font=("Helvetica", 10), width=25)
+        self.retrieve_pin_entry.grid(row=2, column=1, padx=10, pady=10, sticky=W)
+
+        btn_frame = tb.Frame(form_frame)
+        btn_frame.grid(row=3, column=0, columnspan=2, pady=30)
+
+        tb.Button(btn_frame, text="Retrieve", command=self.retrieve_account_gui,
+                  bootstyle="success").pack(side=LEFT, padx=10, ipadx=10)
+        tb.Button(btn_frame, text="Back", command=self.show_main_menu,
+                  bootstyle="secondary").pack(side=LEFT, padx=10, ipadx=10)
+
+    def retrieve_account_gui(self):
+        name = self.retrieve_name_entry.get().strip()
+        pin = self.retrieve_pin_entry.get().strip()
+
+        if not name or not pin:
+            messagebox.showerror("Error", "Both name and PIN are required!")
+            return
+
+        account_number = None
+        for acc_num, account in self.accounts.items():
+            if account.name == name and account.pin == pin:
+                account_number = acc_num
+                break
+
+        if account_number:
+            messagebox.showinfo("Success", f"Your account number is: {account_number}")
+        else:
+            messagebox.showerror("Error", "No account found with matching name and PIN")
+
+        self.show_main_menu()
+
+    def clear_content(self):
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
+
+    def run(self):
+        self.root.mainloop()
+
+
+if __name__ == "__main__":
+    app = BankAccountManagement()
+    app.run()
